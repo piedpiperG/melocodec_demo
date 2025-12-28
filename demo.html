@@ -33,6 +33,16 @@
             font-size: 2em;
         }
 
+        h2 {
+            color: #2c3e50;
+            margin: 50px 0 30px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            font-size: 1.5em;
+        }
+
         .sample-item {
             background: #fff;
             border: 2px solid #e0e0e0;
@@ -136,6 +146,44 @@
             color: #ffc107;
         }
 
+        /* Pitch Shifting Styles */
+        .pitch-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .pitch-label {
+            font-weight: bold;
+            color: white;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .pitch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .pitch-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #f5576c;
+        }
+
+        .pitch-item-label {
+            font-weight: 600;
+            color: #f5576c;
+            margin-bottom: 8px;
+            font-size: 1em;
+            letter-spacing: 0.5px;
+        }
+
         audio {
             width: 100%;
             height: 35px;
@@ -149,7 +197,7 @@
         }
 
         @media (max-width: 768px) {
-            .bitrate-grid {
+            .bitrate-grid, .pitch-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -172,14 +220,19 @@
                 { folder: 'bwc', name: 'MeloCodec', bitrates: ['high', 'low'] },
                 { folder: 'encodec', name: 'Encodec', bitrates: ['high', 'low'] },
                 { folder: 'dac', name: 'DAC', bitrates: ['high', 'low'] },
-                { folder: 'mucodec', name: 'MuCodec', bitrates: ['low'] },  // Only high bitrate
+                { folder: 'mucodec', name: 'MuCodec', bitrates: ['low'] },
                 { folder: 'xcodec', name: 'XCodec', bitrates: ['high', 'low'] }
+            ],
+            pitchShifts: [
+                { shift: 2, label: '+2 Semitones' },
+                { shift: 4, label: '+4 Semitones' }
             ],
             audioExt: 'wav'
         };
 
         // ============ Load & Render ============
         function init() {
+            // Codec comparison data
             const audioData = CONFIG.samples.map((id, idx) => ({
                 id: id,
                 index: idx + 1,
@@ -194,11 +247,25 @@
                 }))
             }));
 
-            render(audioData);
+            // Pitch shifting data
+            const pitchData = CONFIG.samples.map((id, idx) => ({
+                id: id,
+                index: idx + 1,
+                original: `${CONFIG.audioPath}/original/${id}.${CONFIG.audioExt}`,
+                shifts: CONFIG.pitchShifts.map(shift => ({
+                    label: shift.label,
+                    path: `${CONFIG.audioPath}/pitch_shift/shifted_${shift.shift}_${id}.${CONFIG.audioExt}`
+                }))
+            }));
+
+            render(audioData, pitchData);
         }
 
-        function render(audioData) {
+        function render(audioData, pitchData) {
             let html = '';
+            
+            // ========== Codec Comparison Section ==========
+            html += '<h2>🎼 Codec Comparison</h2>';
             
             audioData.forEach(sample => {
                 html += `
@@ -236,6 +303,40 @@
                 });
 
                 html += '</div></div>';
+            });
+
+            // ========== Pitch Shifting Section ==========
+            html += '<h2>🎹 Pitch Shifting Experiment</h2>';
+            
+            pitchData.forEach(sample => {
+                html += `
+                    <div class="sample-item">
+                        <div class="sample-header">Sample ${sample.index}</div>
+                        
+                        <div class="original-section">
+                            <div class="original-label">🎯 Original Audio</div>
+                            <audio controls src="${sample.original}"></audio>
+                        </div>
+
+                        <div class="pitch-section">
+                            <div class="pitch-label">🎚️ Pitch Shifted Results</div>
+                            <div class="pitch-grid">
+                `;
+
+                sample.shifts.forEach(shift => {
+                    html += `
+                        <div class="pitch-item">
+                            <div class="pitch-item-label">${shift.label}</div>
+                            <audio controls src="${shift.path}"></audio>
+                        </div>
+                    `;
+                });
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
 
             document.getElementById('loadingMessage').style.display = 'none';
